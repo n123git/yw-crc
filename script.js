@@ -1,7 +1,7 @@
 // my dumbah made the repo but forgot the script, a week later someone asked for it and I had to search for it :/
 
 // ---------- CRC32 core (pure JS) ----------
-function makeCrc32Table() {
+level5.crc.makeCrc32Table = function() {
   const table = new Uint32Array(256);
   for (let i = 0; i < 256; i++) {
     let c = i;
@@ -12,9 +12,9 @@ function makeCrc32Table() {
   }
   return table;
 }
-const CRC32_TABLE = makeCrc32Table();
+const CRC32_TABLE = level5.crc.makeCrc32Table();
 
-function crc32ForString(str) {
+level5.crc.crc32ForString = function(str) {
   const bytes = typeof TextEncoder !== 'undefined' ? new TextEncoder().encode(str) : Buffer.from(str, 'utf8');
   let crc = 0xFFFFFFFF >>> 0;
   for (let i = 0; i < bytes.length; i++) {
@@ -24,7 +24,7 @@ function crc32ForString(str) {
   return (crc ^ 0xFFFFFFFF) >>> 0;
 }
 
-function parseTargetCrc(target) {
+level5.crc.parseTargetCrc = function(target) {
   if (typeof target === 'number' && Number.isFinite(target)) return (target >>> 0);
   if (typeof target === 'string') {
     let s = target.trim().toLowerCase();
@@ -43,7 +43,7 @@ function parseTargetCrc(target) {
  *  - an array with a single string element: ["0123..."]
  * returns array of single characters.
  */
-function normalizeAllowedChars(allowed) {
+level5.crc.normalizeAllowedChars = function(allowed) {
   if (typeof allowed === 'string') return Array.from(allowed);
   if (Array.isArray(allowed)) {
     if (allowed.length === 1 && typeof allowed[0] === 'string') return Array.from(allowed[0]);
@@ -68,7 +68,7 @@ function normalizeAllowedChars(allowed) {
  *
  * Returns: Promise<string|null> first matching full string (prefix+var+suffix) or null if not found.
  */
-async function bruteForceCrc32(targetCrc, options = {}) {
+ level5.crc.bruteForceCrc32 = async function(targetCrc, options = {}) {
   const {
     requiredPrefix = '',
     requiredSuffix = '',
@@ -79,8 +79,8 @@ async function bruteForceCrc32(targetCrc, options = {}) {
     onProgress = null,
   } = options;
 
-  const target = parseTargetCrc(targetCrc);
-  const chars = normalizeAllowedChars(allowedChars);
+  const target = level5.crc.parseTargetCrc(targetCrc);
+  const chars = level5.crc.normalizeAllowedChars(allowedChars);
   const radix = chars.length;
 
   if (!(Number.isInteger(minLen) && Number.isInteger(maxLen) && minLen >= 0 && maxLen >= minLen)) {
@@ -96,7 +96,7 @@ async function bruteForceCrc32(targetCrc, options = {}) {
     if (len === 0) {
       const candidate = requiredPrefix + '' + requiredSuffix;
       totalTried++;
-      if (crc32ForString(candidate) === target) return candidate;
+      if (level5.crc.crc32ForString(candidate) === target) return candidate;
       if (onProgress) onProgress(totalTried, candidate);
       continue;
     }
@@ -117,7 +117,7 @@ async function bruteForceCrc32(targetCrc, options = {}) {
       const candidate = requiredPrefix + varStr + requiredSuffix;
       totalTried++;
 
-      if (crc32ForString(candidate) === target) {
+      if (level5.crc.crc32ForString(candidate) === target) {
         return candidate;
       }
 
@@ -153,7 +153,7 @@ async function bruteForceCrc32(targetCrc, options = {}) {
  * - variable length: 6 if isYW1 === false, else 3
  * - returns the full matched string (e.g. "para_y012345") or null
  */
-async function findParaByCrc32(targetCrc, isYW1 = false, opts = {}) {
+level5.crc.findParaByCrc32 = async function(targetCrc, isYW1 = false, opts = {}) {
   const varLen = isYW1 ? 3 : 6;
   const mergedOpts = Object.assign({
     requiredPrefix: 'para_y',
@@ -165,7 +165,7 @@ async function findParaByCrc32(targetCrc, isYW1 = false, opts = {}) {
     onProgress: null,
   }, opts);
 
-  return bruteForceCrc32(targetCrc, mergedOpts);
+  return level5.crc.bruteForceCrc32(targetCrc, mergedOpts);
 }
 
 // ---------- Example usage ----------
